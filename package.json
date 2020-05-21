@@ -1,0 +1,31 @@
+{
+  "name": "use-color-luminance",
+  "version": "1.0.0",
+  "description": "Hook to determine a colour's luminance",
+  "main": "useColorLuminance.cjs.js",
+  "module": "useColorLuminance.es.js",
+  "types": "useColorLuminance.d.ts",
+  "author": "Derk-Jan Karrenbeld <derk-jan+github@karrenbeld.info>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "build": "yarn build:module && yarn build:main && yarn build:dts",
+    "build:module": "yarn tsc --module es2015 --outDir build && move build\\useColorLuminance.js .\\useColorLuminance.es.js",
+    "build:main": "yarn tsc --module commonjs --outDir build && move build\\useColorLuminance.js .\\useColorLuminance.cjs.js",
+    "build:dts": "yarn tsc --declaration --declarationMap --emitDeclarationOnly"
+  },
+  "peerDependencies": {
+    "react": ">= 16.8"
+  },
+  "devDependencies": {
+    "@types/react": "^16.9.35",
+    "react": "~16.9.0",
+    "typescript": "^3.9.3"
+  },
+  "files": [
+    "useColorLuminance.cjs.js",
+    "useColorLuminance.es.js",
+    "useColorLuminance.d.ts",
+    "useColorLuminance.d.ts.map"
+  ]
+}
