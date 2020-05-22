@@ -126,7 +126,7 @@ export function colorLuminance(color: OpaqueColor, perceived?: true): number {
 }
 
 function hexToByte(hex: string): number {
-  return parseInt(hex, 16) / 255;
+  return parseInt(hex, 16);
 }
 
 function componentsToLuminance(
