@@ -4,7 +4,7 @@ const RGBA_PATTERN = /rgba?\(([0-9]+),([0-9]+),([0-9]+)(?:,(1|0|0\.[0-9]*))?\)/;
 const DEFAULT_THRESHOLD = 0.5;
 
 /**
- * Premultiplied color:
+ * Opaque color:
  *
  * Supported formats for string input are:
  * - #rgb
@@ -29,7 +29,7 @@ const DEFAULT_THRESHOLD = 0.5;
  *   [127, 127, 255]
  *   [32, 64, 87, 1]
  */
-type PremultipliedColor =
+type OpaqueColor =
   | string
   | [number, number, number]
   | [number, number, number, 1];
@@ -46,7 +46,7 @@ type PremultipliedColor =
  *   useIsColorDark('#333')
  */
 export function useIsColorDark(
-  color: PremultipliedColor,
+  color: OpaqueColor,
   perceived?: true,
   threshold = DEFAULT_THRESHOLD
 ): boolean {
@@ -54,7 +54,7 @@ export function useIsColorDark(
 }
 
 export function useColorLuminance(
-  color: PremultipliedColor,
+  color: OpaqueColor,
   perceived?: true
 ): number {
   return useMemo(() => colorLuminance(color, perceived), [color, perceived]);
@@ -66,10 +66,7 @@ export function useColorLuminance(
  * @param color #rgb, #rrggbb[FF], rgb(r,g,b), rgba(r,g,b,1) or [r, g, b]
  * @param perceived if false, uses sRGB luminance instead of perceived
  */
-export function colorLuminance(
-  color: PremultipliedColor,
-  perceived?: true
-): number {
+export function colorLuminance(color: OpaqueColor, perceived?: true): number {
   if (typeof color === 'string') {
     if (color[0] === '#') {
       const rgb = color.slice(1);
@@ -87,7 +84,7 @@ export function colorLuminance(
       if (rgb.length === 8) {
         const alpha = hexToByte(rgb.slice(6, 8));
         if (alpha !== 255) {
-          throw new NotPremultiplied(color, alpha);
+          throw new NeedsAlphaBlending(color, alpha);
         }
       }
 
@@ -106,7 +103,7 @@ export function colorLuminance(
 
     if (matches) {
       if (matches[4] && matches[4] !== '1') {
-        throw new NotPremultiplied(color, Number(matches[4]));
+        throw new NeedsAlphaBlending(color, Number(matches[4]));
       }
 
       return colorLuminance(
@@ -146,7 +143,7 @@ function componentsToLuminance(
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-function assertRgbColor(color: Exclude<PremultipliedColor, string>) {
+function assertRgbColor(color: Exclude<OpaqueColor, string>) {
   if (
     color.length < 3 ||
     color.length > 4 ||
@@ -156,7 +153,7 @@ function assertRgbColor(color: Exclude<PremultipliedColor, string>) {
   }
 
   if (color.length == 4 && color[3] !== 1) {
-    throw new NotPremultiplied(`[${color.join(', ')}]`, color[3]);
+    throw new NeedsAlphaBlending(`[${color.join(', ')}]`, color[3]);
   }
 }
 
@@ -185,23 +182,23 @@ Keyword/system colors are not supported (nor consistent across environments).
   }
 }
 
-class NotPremultiplied extends Error {
+class NeedsAlphaBlending extends Error {
   constructor(color: string, alpha: number) {
     super(
       `
 Expected a fully opaque color, actual: ${color}, with alpha: ${alpha}.
 
-Colors with that are (semi-)translucent need to be pre-multiplied, which means
+Colors with that are (semi-)translucent need to be alpha-blended, which means
 that you need to know the background color(s) in order to calculate the color
 that will show on screen.
 
-The package use-premultiplied-color has both a React hook as well as a general
+The package use-alpha-blended-color has both a React hook as well as a general
 utility function to premultiply colors.
 
-  import { usePremultipliedColor } from 'use-premultiplied-color'
+  import { useAlphaBlendedColor } from 'use-alpha-blended-color'
 
-  const premultiplied = usePremultipliedColor(${color}, '#<background-color>')
-  const luminance = useColorLuminance(${color})
+  const prepared = useAlphaBlendedColor(${color}, '#<background-color>')
+  const luminance = useColorLuminance(prepared)
       `.trim()
     );
   }
