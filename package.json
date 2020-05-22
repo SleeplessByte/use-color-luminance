@@ -1,6 +1,6 @@
 {
   "name": "use-color-luminance",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Hook to determine a colour's luminance",
   "main": "index.cjs.js",
   "module": "index.es.js",
