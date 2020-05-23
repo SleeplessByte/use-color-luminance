@@ -38,7 +38,6 @@ type OpaqueColor =
  * Returns true if the given color is dark, false otherwise
  *
  * @param color
- * @param perceived
  * @param threshold
  *
  * @example
@@ -47,38 +46,36 @@ type OpaqueColor =
  */
 export function useIsColorDark(
   color: OpaqueColor,
-  perceived?: true,
   threshold = DEFAULT_THRESHOLD
 ): boolean {
-  return useColorLuminance(color, perceived) < threshold;
+  return useColorLuminance(color) < threshold;
 }
 
-export function useColorLuminance(
-  color: OpaqueColor,
-  perceived?: true
-): number {
-  return useMemo(() => colorLuminance(color, perceived), [color, perceived]);
+export function useColorLuminance(color: OpaqueColor): number {
+  return useMemo(() => colorLuminance(color), [color]);
 }
+
+const CACHE: Record<string, number> = {};
 
 /**
  * Calculates the color's luminance
  *
  * @param color #rgb, #rrggbb[FF], rgb(r,g,b), rgba(r,g,b,1) or [r, g, b]
- * @param perceived if false, uses sRGB luminance instead of perceived
  */
-export function colorLuminance(color: OpaqueColor, perceived?: true): number {
+export function colorLuminance(color: OpaqueColor, cache = true): number {
   if (typeof color === 'string') {
+    if (cache && CACHE[color]) {
+      return CACHE[color];
+    }
+
     if (color[0] === '#') {
       const rgb = color.slice(1);
       if (rgb.length === 3) {
-        return colorLuminance(
-          [
-            hexToByte(rgb[0] + rgb[0]),
-            hexToByte(rgb[1] + rgb[1]),
-            hexToByte(rgb[2] + rgb[2]),
-          ],
-          perceived
-        );
+        return (CACHE[color] = colorLuminance([
+          hexToByte(rgb[0] + rgb[0]),
+          hexToByte(rgb[1] + rgb[1]),
+          hexToByte(rgb[2] + rgb[2]),
+        ]));
       }
 
       if (rgb.length === 8) {
@@ -89,11 +86,11 @@ export function colorLuminance(color: OpaqueColor, perceived?: true): number {
       }
 
       if (rgb.length === 6 || rgb.length === 8) {
-        return colorLuminance([
+        return (CACHE[color] = colorLuminance([
           hexToByte(rgb.slice(0, 2)),
           hexToByte(rgb.slice(2, 4)),
           hexToByte(rgb.slice(4, 6)),
-        ]);
+        ]));
       }
 
       throw new UnsupportedFormat(color);
@@ -106,10 +103,11 @@ export function colorLuminance(color: OpaqueColor, perceived?: true): number {
         throw new NeedsAlphaBlending(color, Number(matches[4]));
       }
 
-      return colorLuminance(
-        [Number(matches[1]), Number(matches[2]), Number(matches[3])],
-        perceived
-      );
+      return (CACHE[color] = colorLuminance([
+        Number(matches[1]),
+        Number(matches[2]),
+        Number(matches[3]),
+      ]));
     }
 
     throw new UnsupportedFormat(color);
@@ -117,30 +115,21 @@ export function colorLuminance(color: OpaqueColor, perceived?: true): number {
 
   assertRgbColor(color);
 
-  return componentsToLuminance(
-    color[0] / 255,
-    color[1] / 255,
-    color[2] / 255,
-    !!perceived
-  );
+  return componentsToLuminance(color[0] / 255, color[1] / 255, color[2] / 255);
 }
 
 function hexToByte(hex: string): number {
   return parseInt(hex, 16);
 }
 
-function componentsToLuminance(
-  r: number,
-  g: number,
-  b: number,
-  perceived: boolean
-) {
-  if (perceived) {
-    // https://www.w3.org/TR/AERT/#color-contrast
-    return 0.299 * r + 0.587 * g + 0.114 * b;
-  }
+function componentsToLuminance(r: number, g: number, b: number) {
+  const rl = r > 0.03928 ? ((r + 0.055) / 1.055) ** 2.4 : r / 12.92;
+  const gl = g > 0.03928 ? ((g + 0.055) / 1.055) ** 2.4 : g / 12.92;
+  const bl = b > 0.03928 ? ((b + 0.055) / 1.055) ** 2.4 : b / 12.92;
+
+  // https://www.w3.org/TR/WCAG20-TECHS/G17.html#G17-tests
   // https://en.wikipedia.org/wiki/Relative_luminance
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return 0.2126 * rl + 0.7152 * gl + 0.0722 * bl;
 }
 
 function assertRgbColor(color: Exclude<OpaqueColor, string>) {
