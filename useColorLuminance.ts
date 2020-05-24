@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 const RGBA_PATTERN = /rgba?\(([0-9]+),([0-9]+),([0-9]+)(?:,(1|0|0\.[0-9]*))?\)/;
-const DEFAULT_THRESHOLD = 0.5;
+const DEFAULT_THRESHOLD = 0.35;
 
 /**
  * Opaque color:
@@ -35,10 +35,17 @@ type OpaqueColor =
   | [number, number, number, 1];
 
 /**
- * Returns true if the given color is dark, false otherwise
+ * Returns true if the given color has a lower luminance than threshold (default
+ * is 0.35), false otherwise.
+ *
+ * Prefer {useContrast} or {useHasContrastOnLight} because it's will determine
+ * if a color is dark enough to have contrast with the background color.
  *
  * @param color
  * @param threshold
+ *
+ * @see useContrast
+ * @see useHasContrastOnLight
  *
  * @example
  *
@@ -51,6 +58,75 @@ export function useIsColorDark(
   return useColorLuminance(color) < threshold;
 }
 
+/**
+ * Calculates the contrast between two colors
+ *
+ * @param color the foreground color
+ * @param background the background color
+ *
+ * @returns the contrast 1:<result> between 1 and 21
+ */
+export function useContrast(
+  color: OpaqueColor,
+  background: OpaqueColor
+): number {
+  return useMemo(() => contrast(color, background), [color, background]);
+}
+
+/**
+ * Calculates the contrast between two colors
+ *
+ * @param color the foreground color
+ * @param background the background color
+ *
+ * @returns the contrast 1:<result> between 1 and 21
+ */
+export function contrast(color: OpaqueColor, background: OpaqueColor) {
+  const la = colorLuminance(color);
+  const lb = colorLuminance(background);
+
+  const [l2, l1] = [la, lb].sort();
+
+  return (l1 + 0.05) / (l2 + 0.05);
+}
+
+/**
+ * Returns true if the color has at least an AA contrast with the background, if
+ * the background is white.
+ *
+ * @param color
+ * @param background defaults to white (#fff)
+ * @param threshold AA: 3, AAA: 4.5
+ */
+export function useHasContrastOnLight(
+  color: string,
+  background: string = '#ffffff',
+  threshold = 3
+) {
+  return useContrast(color, background) > threshold;
+}
+
+/**
+ * Returns true if the color has at least an AA contrast with the background, if
+ * the background is black.
+ *
+ * @param color
+ * @param background defaults to black (#fff)
+ * @param threshold AA: 3, AAA: 4.5
+ */
+export function useHasContrastOnDark(
+  color: string,
+  background: string = '#000000',
+  threshold = 3
+) {
+  return useContrast(color, background) > threshold;
+}
+
+/**
+ * Gives the color luminance (as a hook)
+ * @param color the color
+ * @returns luminance
+ */
 export function useColorLuminance(color: OpaqueColor): number {
   return useMemo(() => colorLuminance(color), [color]);
 }
