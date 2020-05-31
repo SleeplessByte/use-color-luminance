@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-const RGBA_PATTERN = /rgba?\(([0-9]+),([0-9]+),([0-9]+)(?:,(1|0|0\.[0-9]*))?\)/;
+const RGBA_PATTERN = /rgba?\(([0-9]+),([0-9]+),([0-9]+)(?:,(1|0|0?\.[0-9]*))?\)/;
 const LUMINANCE_DARK_THRESHOLD = 0.35;
 
 export const AA_THRESHOLD_CONTRAST = 4.5;
@@ -34,7 +34,7 @@ export const AAA_LARGE_SIZE_THRESHOLD_CONTRAST = 4.5;
  *   [127, 127, 255]
  *   [32, 64, 87, 1]
  */
-type OpaqueColor =
+export type OpaqueColor =
   | string
   | [number, number, number]
   | [number, number, number, 1];
@@ -109,8 +109,8 @@ export function contrast(color: OpaqueColor, background: OpaqueColor) {
  * @see AAA_LARGE_SIZE_THRESHOLD_CONTRAST
  */
 export function useHasContrastOnLight(
-  color: string,
-  background: string = '#ffffff',
+  color: OpaqueColor,
+  background: OpaqueColor = '#ffffff',
   threshold = AA_THRESHOLD_CONTRAST
 ) {
   return useContrast(color, background) > threshold;
@@ -130,8 +130,8 @@ export function useHasContrastOnLight(
  * @see AAA_LARGE_SIZE_THRESHOLD_CONTRAST
  */
 export function useHasContrastOnDark(
-  color: string,
-  background: string = '#000000',
+  color: OpaqueColor,
+  background: OpaqueColor = '#000000',
   threshold = AA_THRESHOLD_CONTRAST
 ) {
   return useContrast(color, background) > threshold;
@@ -237,7 +237,7 @@ function assertRgbColor(color: Exclude<OpaqueColor, string>) {
   }
 }
 
-class UnsupportedFormat extends Error {
+export class UnsupportedFormat extends Error {
   constructor(color: string) {
     super(
       `
@@ -262,7 +262,7 @@ Keyword/system colors are not supported (nor consistent across environments).
   }
 }
 
-class NeedsAlphaBlending extends Error {
+export class NeedsAlphaBlending extends Error {
   constructor(color: string, alpha: number) {
     super(
       `
