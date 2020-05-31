@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
 
 const RGBA_PATTERN = /rgba?\(([0-9]+),([0-9]+),([0-9]+)(?:,(1|0|0\.[0-9]*))?\)/;
-const DEFAULT_THRESHOLD = 0.35;
+const LUMINANCE_DARK_THRESHOLD = 0.35;
+
+export const AA_THRESHOLD_CONTRAST = 4.5;
+export const AAA_THRESHOLD_CONTRAST = 7.0;
+export const AA_LARGE_SIZE_THRESHOLD_CONTRAST = 3.0;
+export const AAA_LARGE_SIZE_THRESHOLD_CONTRAST = 4.5;
 
 /**
  * Opaque color:
@@ -53,7 +58,7 @@ type OpaqueColor =
  */
 export function useIsColorDark(
   color: OpaqueColor,
-  threshold = DEFAULT_THRESHOLD
+  threshold = LUMINANCE_DARK_THRESHOLD
 ): boolean {
   return useColorLuminance(color) < threshold;
 }
@@ -96,12 +101,17 @@ export function contrast(color: OpaqueColor, background: OpaqueColor) {
  *
  * @param color
  * @param background defaults to white (#fff)
- * @param threshold AA: 3, AAA: 4.5
+ * @param threshold {AA_THRESHOLD_CONTRAST}
+ *
+ * @see AA_THRESHOLD_CONTRAST
+ * @see AA_LARGE_SIZE_THRESHOLD_CONTRAST
+ * @see AAA_THRESHOLD_CONTRAST
+ * @see AAA_LARGE_SIZE_THRESHOLD_CONTRAST
  */
 export function useHasContrastOnLight(
   color: string,
   background: string = '#ffffff',
-  threshold = 3
+  threshold = AA_THRESHOLD_CONTRAST
 ) {
   return useContrast(color, background) > threshold;
 }
@@ -112,12 +122,17 @@ export function useHasContrastOnLight(
  *
  * @param color
  * @param background defaults to black (#fff)
- * @param threshold AA: 3, AAA: 4.5
+ * @param threshold {AA_THRESHOLD_CONTRAST}
+ *
+ * @see AA_THRESHOLD_CONTRAST
+ * @see AA_LARGE_SIZE_THRESHOLD_CONTRAST
+ * @see AAA_THRESHOLD_CONTRAST
+ * @see AAA_LARGE_SIZE_THRESHOLD_CONTRAST
  */
 export function useHasContrastOnDark(
   color: string,
   background: string = '#000000',
-  threshold = 3
+  threshold = AA_THRESHOLD_CONTRAST
 ) {
   return useContrast(color, background) > threshold;
 }
